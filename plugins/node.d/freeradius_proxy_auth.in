@@ -39,7 +39,8 @@ Copyright (C) 2008 Alan DeKok <aland@deployingradius.com>
 
 =head1 MAGIC MARKERS
 
- #%# family=manual
+ #%# family=auto
+ #%# capabilities=autoconf
 
 =cut
 
@@ -47,11 +48,21 @@ RADMIN=${radmin:-`which radmin 2>/dev/null`}
 RADMIN=${RADMIN:-/usr/sbin/radmin}
 SOCKETFILE=${socketfile:-/var/run/radiusd/radiusd.sock}
 
+#
+# Check we can execute radmin, and check that the
+# stats home_server auth command exists, and provides us with
+# valid results.
+#
+# Note: Before 3.0.7 there was no separate communications channel
+# for error codes or error messages, so radmin would always exit
+# with 0, even on failure.
+#
 if [ "$1" = "autoconf" ]; then
-    #
-    #  FIXME: Check if FreeRADIUS is running.
-    #
-    echo yes
+    if [ -x $RADMIN ] && $RADMIN -f $SOCKETFILE -e "stats home_server auth" 2>/dev/null | grep 'requests' > /dev/null; then
+        echo yes
+    else
+        echo no
+    fi
     exit 0
 fi
 
